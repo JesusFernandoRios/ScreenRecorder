@@ -1,10 +1,25 @@
 
+
+// using the browsers built in media recorder to capture footage
+let mediaRecorder;
+const recordedChunks = [];
+
 // buttons
 const videoElement = document.querySelector('video');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const videoSelectBtn = document.getElementById('videoSelectBtn');
 videoSelectBtn.onclick= getVideoSources;
+startBtn.onclick = e => {
+    mediaRecorder.start();
+    startBtn.classList.add('is-danger');
+    startBtn.innerText = 'Recording';
+};
+stopBtn.onclick = e => {
+    mediaRecorder.stop();
+    startBtn.classList.remove('is-danger');
+    startBtn.innerText = 'Start';
+};
 
 
 // electron built in video capture
@@ -33,6 +48,14 @@ async function selectSource(source) {
     // how to preview the source on the video element
     videoElement.srcObject = stream;
     videoElement.play();
+
+    // creating the media recorder
+    const options = {mimeType: 'video/webm; codecs=vp9'}
+    mediaRecorder = new MediaRecorder(stream, options);
+
+    // event handlers
+    mediaRecorder.ondataavaliable = handleDataAvaliable;
+    mediaRecorder.onstop = handleStop;
 }
 
 // Get avaliable video sources
@@ -54,18 +77,6 @@ async function getVideoSources() {
     videoOptionsMenu.popup();
 }
 
-// using the browsers built in media recorder to capture footage
-let mediaRecorder;
-const recordedChunks = [];
-
-// creating the media recorder
-const options = {mimeType: 'video/webm; codecs=vp9'}
-mediaRecorder = new mediaRecorder(stream, options);
-
-// event handlers
-mediaRecorder.ondataavaliable = handleDataAvaliable;
-mediaRecorder.onstop = handleStop;
-
 // captures all recorder chunks
 function handleDataAvaliable(e) {
 
@@ -73,12 +84,29 @@ function handleDataAvaliable(e) {
     recordedChunks.push(e.data)
 }
 
+// this allows to create native dialog for saving and opening files
+const { dialog } = remote;
+const { writeFile } = require('fs')  
+
 // save the video file on stop
 async function handleStop(e) {
-    // 
+    //a blob is a data structure to handle raw data 
     const blob = new Blob(recordedChunks, {
         type: 'video/webm; codecs=vp9'
     });
+
+    const buffer = Buffer.from( await blob.arrayBuffer())
+
+    const {filePath} = await dialog.showSaveDialog({
+        buttonLabel: 'save Video',
+        defaultPath: `vid-${Date.now()}.webm`
+    })
+
+    console.log(filePath)
+
+    writeFile(filePath, buffer, () => console.log("video saved Successfully"))
+
 }
+
 
 
