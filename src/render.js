@@ -54,4 +54,31 @@ async function getVideoSources() {
     videoOptionsMenu.popup();
 }
 
+// using the browsers built in media recorder to capture footage
+let mediaRecorder;
+const recordedChunks = [];
+
+// creating the media recorder
+const options = {mimeType: 'video/webm; codecs=vp9'}
+mediaRecorder = new mediaRecorder(stream, options);
+
+// event handlers
+mediaRecorder.ondataavaliable = handleDataAvaliable;
+mediaRecorder.onstop = handleStop;
+
+// captures all recorder chunks
+function handleDataAvaliable(e) {
+
+    console.log("video data avaliable")
+    recordedChunks.push(e.data)
+}
+
+// save the video file on stop
+async function handleStop(e) {
+    // 
+    const blob = new Blob(recordedChunks, {
+        type: 'video/webm; codecs=vp9'
+    });
+}
+
 
